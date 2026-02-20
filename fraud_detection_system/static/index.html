@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FraudGuard AI — ML Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: #0f172a;
+            color: #f8fafc;
+        }
+
+        .glass {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .nav-link {
+            transition: all .2s;
+        }
+
+        .nav-link.active {
+            background: rgba(99, 102, 241, 0.2);
+            color: #a5b4fc;
+            border-left: 3px solid #6366f1;
+        }
+
+        .nav-link:not(.active):hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        input,
+        select {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #f8fafc;
+            border-radius: .5rem;
+            padding: .5rem .75rem;
+            width: 100%;
+            outline: none;
+            transition: border .2s;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #6366f1;
+        }
+
+        .badge-fraud {
+            background: rgba(239, 68, 68, .15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, .3);
+        }
+
+        .badge-safe {
+            background: rgba(34, 197, 94, .15);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, .3);
+        }
+
+        .stat-card {
+            transition: transform .3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex">
+
+    <!-- ── Sidebar ─────────────────────────── -->
+    <aside class="w-60 min-h-screen glass border-r border-slate-700/50 flex flex-col fixed left-0 top-0 z-40">
+        <div class="p-5 border-b border-slate-700/50 flex items-center space-x-3">
+            <div
+                class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+                <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+            </div>
+            <div>
+                <div class="font-bold text-white text-sm">FraudGuard AI</div>
+                <div class="text-xs text-slate-500">ML Platform v2.0</div>
+            </div>
+        </div>
+        <nav class="flex-1 p-3 space-y-1">
+            <button onclick="showPage('overview')"
+                class="nav-link active w-full text-left px-4 py-2.5 rounded-lg text-sm flex items-center space-x-3"
+                id="nav-overview">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                <span>Overview</span>
+            </button>
+            <button onclick="showPage('data')"
+                class="nav-link w-full text-left px-4 py-2.5 rounded-lg text-sm text-slate-400 flex items-center space-x-3"
+                id="nav-data">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                <span>Data Init</span>
+            </button>
+            <button onclick="showPage('fraud')"
+                class="nav-link w-full text-left px-4 py-2.5 rounded-lg text-sm text-slate-400 flex items-center space-x-3"
+                id="nav-fraud">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>Fraud Detection</span>
+            </button>
+            <button onclick="showPage('segment')"
+                class="nav-link w-full text-left px-4 py-2.5 rounded-lg text-sm text-slate-400 flex items-center space-x-3"
+                id="nav-segment">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>Segmentation</span>
+            </button>
+            <button onclick="showPage('logs')"
+                class="nav-link w-full text-left px-4 py-2.5 rounded-lg text-sm text-slate-400 flex items-center space-x-3"
+                id="nav-logs">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Activity Logs</span>
+            </button>
+        </nav>
+        <div class="p-3 m-3 rounded-xl bg-slate-800/60 border border-slate-700 text-center">
+            <div class="text-xs text-slate-500 mb-1">System Status</div>
+            <div class="text-xs font-semibold text-green-400 flex items-center justify-center space-x-1">
+                <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span><span>Online</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ── Main Content ──────────────────── -->
+    <main class="ml-60 flex-1 p-6 space-y-6">
+
+        <!-- ═══════════ OVERVIEW PAGE ═══════════ -->
+        <div id="page-overview" class="page active">
+            <h1 class="text-2xl font-bold text-white mb-1">Dashboard Overview</h1>
+            <p class="text-slate-400 text-sm mb-6">Real-time snapshot of your ML data foundation.</p>
+
+            <!-- Stat Cards -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="glass rounded-xl p-4 stat-card">
+                    <div class="text-xs text-slate-500 mb-1">Total Users</div>
+                    <div class="text-2xl font-bold text-indigo-400" id="stat-users">—</div>
+                    <div class="text-xs text-slate-500 mt-1">Segmentation records</div>
+                </div>
+                <div class="glass rounded-xl p-4 stat-card">
+                    <div class="text-xs text-slate-500 mb-1">Total Transactions</div>
+                    <div class="text-2xl font-bold text-purple-400" id="stat-txns">—</div>
+                    <div class="text-xs text-slate-500 mt-1">With 13 ML features</div>
+                </div>
+                <div class="glass rounded-xl p-4 stat-card">
+                    <div class="text-xs text-slate-500 mb-1">Fraud Transactions</div>
+                    <div class="text-2xl font-bold text-red-400" id="stat-fraud">—</div>
+                    <div class="text-xs text-slate-500 mt-1">~1% fraud rate</div>
+                </div>
+                <div class="glass rounded-xl p-4 stat-card">
+                    <div class="text-xs text-slate-500 mb-1">Fraud Features</div>
+                    <div class="text-2xl font-bold text-green-400">13</div>
+                    <div class="text-xs text-slate-500 mt-1">7 original + 6 new</div>
+                </div>
+            </div>
+
+            <!-- Feature Showcase -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="glass rounded-xl p-5">
+                    <h2 class="text-base font-semibold text-white mb-4 flex items-center space-x-2">
+                        <span class="w-2 h-2 rounded-full bg-red-400"></span><span>Fraud Detection Features (13)</span>
+                    </h2>
+                    <div class="space-y-2">
+                        <div class="text-xs text-slate-500 uppercase tracking-widest mb-2">Original</div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <span
+                                class="text-xs bg-slate-800 px-3 py-1.5 rounded-lg text-slate-300 font-mono">amount</span>
+                            <span
+                                class="text-xs bg-slate-800 px-3 py-1.5 rounded-lg text-slate-300 font-mono">merchant_category</span>
+                            <span
+                                class="text-xs bg-slate-800 px-3 py-1.5 rounded-lg text-slate-300 font-mono">transaction_method</span>
+                            <span
+                                class="text-xs bg-slate-800 px-3 py-1.5 rounded-lg text-slate-300 font-mono">device_type</span>
+                            <span
+                                class="text-xs bg-slate-800 px-3 py-1.5 rounded-lg text-slate-300 font-mono">txns_last_24h</span>
+                            <span
+                                class="text-xs bg-slate-800 px-3 py-1.5 rounded-lg text-slate-300 font-mono">amount_deviation</span>
+                        </div>
+                        <div class="text-xs text-slate-500 uppercase tracking-widest mb-2 mt-3">New Features</div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <span
+                                class="text-xs bg-red-900/30 border border-red-700/30 px-3 py-1.5 rounded-lg text-red-300 font-mono">hour_of_day</span>
+                            <span
+                                class="text-xs bg-red-900/30 border border-red-700/30 px-3 py-1.5 rounded-lg text-red-300 font-mono">is_weekend</span>
+                            <span
+                                class="text-xs bg-red-900/30 border border-red-700/30 px-3 py-1.5 rounded-lg text-red-300 font-mono">is_international</span>
+                            <span
+                                class="text-xs bg-red-900/30 border border-red-700/30 px-3 py-1.5 rounded-lg text-red-300 font-mono">distance_from_home</span>
+                            <span
+                                class="text-xs bg-red-900/30 border border-red-700/30 px-3 py-1.5 rounded-lg text-red-300 font-mono">time_since_last_txn</span>
+                            <span
+                                class="text-xs bg-red-900/30 border border-red-700/30 px-3 py-1.5 rounded-lg text-red-300 font-mono">is_round_amount</span>
+                            <span
+                                class="text-xs bg-red-900/30 border border-red-700/30 px-3 py-1.5 rounded-lg text-red-300 font-mono">failed_attempts_24h</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass rounded-xl p-5">
+                    <h2 class="text-base font-semibold text-white mb-4 flex items-center space-x-2">
+                        <span class="w-2 h-2 rounded-full bg-indigo-400"></span><span>Segmentation Features (10)</span>
+                    </h2>
+                    <div class="space-y-2">
+                        <div class="text-xs text-slate-500 uppercase tracking-widest mb-2">Original RFM</div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <span
+                                class="text-xs bg-slate-800 px-3 py-1.5 rounded-lg text-slate-300 font-mono">avg_monthly_spend</span>
+                            <span
+                                class="text-xs bg-slate-800 px-3 py-1.5 rounded-lg text-slate-300 font-mono">recency_days</span>
+                            <span
+                                class="text-xs bg-slate-800 px-3 py-1.5 rounded-lg text-slate-300 font-mono">frequency_per_month</span>
+                            <span
+                                class="text-xs bg-slate-800 px-3 py-1.5 rounded-lg text-slate-300 font-mono">total_monetary_value</span>
+                        </div>
+                        <div class="text-xs text-slate-500 uppercase tracking-widest mb-2 mt-3">New Behavioral</div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <span
+                                class="text-xs bg-indigo-900/30 border border-indigo-700/30 px-3 py-1.5 rounded-lg text-indigo-300 font-mono">avg_txn_amount</span>
+                            <span
+                                class="text-xs bg-indigo-900/30 border border-indigo-700/30 px-3 py-1.5 rounded-lg text-indigo-300 font-mono">online_purchase_ratio</span>
+                            <span
+                                class="text-xs bg-indigo-900/30 border border-indigo-700/30 px-3 py-1.5 rounded-lg text-indigo-300 font-mono">night_owl_ratio</span>
+                            <span
+                                class="text-xs bg-indigo-900/30 border border-indigo-700/30 px-3 py-1.5 rounded-lg text-indigo-300 font-mono">unique_merchants</span>
+                            <span
+                                class="text-xs bg-indigo-900/30 border border-indigo-700/30 px-3 py-1.5 rounded-lg text-indigo-300 font-mono">churn_risk_score</span>
+                            <span
+                                class="text-xs bg-indigo-900/30 border border-indigo-700/30 px-3 py-1.5 rounded-lg text-indigo-300 font-mono">pref_payment_method</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════ DATA INIT PAGE ═══════════ -->
+        <div id="page-data" class="page">
+            <h1 class="text-2xl font-bold text-white mb-1">Data Initialization</h1>
+            <p class="text-slate-400 text-sm mb-6">Generate 5,000 users and 50,000 transactions with all ML features.
+            </p>
+            <div class="max-w-2xl">
+                <div class="glass rounded-xl p-6">
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="bg-slate-800/60 rounded-lg p-4 text-center">
+                            <div class="text-xl font-bold text-blue-400">5,000</div>
+                            <div class="text-xs text-slate-500 mt-1">Users</div>
+                        </div>
+                        <div class="bg-slate-800/60 rounded-lg p-4 text-center">
+                            <div class="text-xl font-bold text-purple-400">50,000</div>
+                            <div class="text-xs text-slate-500 mt-1">Transactions</div>
+                        </div>
+                        <div class="bg-slate-800/60 rounded-lg p-4 text-center">
+                            <div class="text-xl font-bold text-red-400">~1%</div>
+                            <div class="text-xs text-slate-500 mt-1">Fraud Rate</div>
+                        </div>
+                    </div>
+                    <div class="space-y-3 mb-6 text-sm text-slate-400">
+                        <div class="flex items-center space-x-2"><span class="text-green-400">✓</span><span>Haversine
+                                distance from home coordinates</span></div>
+                        <div class="flex items-center space-x-2"><span class="text-green-400">✓</span><span>Realistic
+                                hour-of-day fraud clustering (1–4 AM)</span></div>
+                        <div class="flex items-center space-x-2"><span
+                                class="text-green-400">✓</span><span>International IP and geolocation deviation</span>
+                        </div>
+                        <div class="flex items-center space-x-2"><span class="text-green-400">✓</span><span>Velocity,
+                                failed attempts, round-amount flags</span></div>
+                        <div class="flex items-center space-x-2"><span class="text-green-400">✓</span><span>RFM + churn
+                                risk + behavioral ratios for segmentation</span></div>
+                    </div>
+                    <button id="btn-gen" onclick="generateData()"
+                        class="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl transition-all">
+                        Generate Synthetic Dataset
+                    </button>
+                    <div id="gen-status" class="hidden mt-4 p-4 bg-slate-900 rounded-lg text-sm font-mono"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════ FRAUD PAGE ═══════════ -->
+        <div id="page-fraud" class="page">
+            <h1 class="text-2xl font-bold text-white mb-1">Fraud Detection</h1>
+            <p class="text-slate-400 text-sm mb-6">Simulate a transaction with all 13 ML features. The heuristic engine
+                evaluates a fraud risk score in real-time.</p>
+
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <!-- Form -->
+                <div class="glass rounded-xl p-6">
+                    <h2 class="text-base font-semibold text-white mb-5">Transaction Details</h2>
+                    <form id="fraud-form" onsubmit="simulateFraud(event)" class="space-y-4">
+
+                        <!-- Row 1: User + Amount -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs text-slate-500 uppercase tracking-wider block mb-1">User
+                                    ID</label>
+                                <input id="f-uid" type="number" min="1" max="5000" placeholder="1–5000" required>
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-500 uppercase tracking-wider block mb-1">Amount
+                                    ($)</label>
+                                <input id="f-amt" type="number" step="0.01" placeholder="0.00" required>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Category + Method -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs text-slate-500 uppercase tracking-wider block mb-1">Merchant
+                                    Category</label>
+                                <select id="f-cat">
+                                    <option>Groceries</option>
+                                    <option>Electronics</option>
+                                    <option>Travel</option>
+                                    <option>Dining</option>
+                                    <option>Entertainment</option>
+                                    <option>Fashion</option>
+                                    <option>Utility</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-500 uppercase tracking-wider block mb-1">Transaction
+                                    Method</label>
+                                <select id="f-method">
+                                    <option>Chip</option>
+                                    <option>Tap</option>
+                                    <option>Online</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Row 3: Device + Hour -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs text-slate-500 uppercase tracking-wider block mb-1">Device
+                                    Type</label>
+                                <select id="f-device">
+                                    <option>Mobile</option>
+                                    <option>Desktop</option>
+                                    <option>Tablet</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-500 uppercase tracking-wider block mb-1">Hour of Day
+                                    (0–23)</label>
+                                <input id="f-hour" type="number" min="0" max="23" value="14" placeholder="0-23">
+                            </div>
+                        </div>
+
+                        <!-- New Feature Flags -->
+                        <div class="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                            <div class="text-xs text-slate-500 uppercase tracking-wider mb-3">Advanced Risk Signals
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="flex items-center space-x-2 cursor-pointer">
+                                    <input id="f-intl" type="checkbox" class="w-4 h-4 accent-indigo-500">
+                                    <span class="text-sm text-slate-300">International Transaction</span>
+                                </label>
+                                <label class="flex items-center space-x-2 cursor-pointer">
+                                    <input id="f-round" type="checkbox" class="w-4 h-4 accent-indigo-500">
+                                    <span class="text-sm text-slate-300">Round Amount (e.g. $500)</span>
+                                </label>
+                                <label class="flex items-center space-x-2 cursor-pointer">
+                                    <input id="f-wknd" type="checkbox" class="w-4 h-4 accent-indigo-500">
+                                    <span class="text-sm text-slate-300">Weekend Transaction</span>
+                                </label>
+                                <div>
+                                    <label class="text-xs text-slate-500 block mb-1">Failed Attempts (24h)</label>
+                                    <input id="f-failed" type="number" min="0" max="20" value="0" class="py-1 text-sm">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 mt-3">
+                                <div>
+                                    <label class="text-xs text-slate-500 block mb-1">Distance from Home (km)</label>
+                                    <input id="f-dist" type="number" min="0" value="10" class="py-1 text-sm">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-slate-500 block mb-1">Time Since Last Txn (hrs)</label>
+                                    <input id="f-time" type="number" min="0" step="0.1" value="6" class="py-1 text-sm">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit"
+                            class="w-full py-3 bg-slate-700 hover:bg-slate-600 border border-slate-600 text-white font-bold rounded-xl transition-all flex items-center justify-center space-x-2">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            <span>Analyze Transaction</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Result Panel -->
+                <div class="space-y-4">
+                    <div id="fraud-result" class="glass rounded-xl p-6 hidden">
+                        <h3 class="text-base font-semibold text-white mb-4">Analysis Result</h3>
+                        <div id="fraud-verdict" class="rounded-lg p-4 mb-4 text-center"></div>
+                        <div class="space-y-2" id="fraud-details"></div>
+                    </div>
+
+                    <!-- Fraud Risk Guide -->
+                    <div class="glass rounded-xl p-5">
+                        <h3 class="text-sm font-semibold text-white mb-3">Risk Signal Guide</h3>
+                        <div class="space-y-2 text-xs text-slate-400">
+                            <div class="flex justify-between"><span>Amount deviation &gt; 5× avg</span><span
+                                    class="text-red-400 font-mono">+0.50</span></div>
+                            <div class="flex justify-between"><span>Amount deviation &gt; 10× avg</span><span
+                                    class="text-red-400 font-mono">+0.30</span></div>
+                            <div class="flex justify-between"><span>Velocity &gt; 8 txns in 24h</span><span
+                                    class="text-red-400 font-mono">+0.30</span></div>
+                            <div class="flex justify-between"><span>Hour 1–4 AM</span><span
+                                    class="text-orange-400 font-mono">+0.20</span></div>
+                            <div class="flex justify-between"><span>Distance from home &gt; 500km</span><span
+                                    class="text-orange-400 font-mono">+0.20</span></div>
+                            <div class="flex justify-between"><span>International transaction</span><span
+                                    class="text-orange-400 font-mono">+0.20</span></div>
+                            <div class="flex justify-between"><span>Round amount (e.g. $500)</span><span
+                                    class="text-yellow-400 font-mono">+0.10</span></div>
+                            <div class="border-t border-slate-700 pt-2 flex justify-between font-semibold">
+                                <span class="text-white">Fraud threshold</span><span class="text-red-400 font-mono">≥
+                                    0.50</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════ SEGMENTATION PAGE ═══════════ -->
+        <div id="page-segment" class="page">
+            <h1 class="text-2xl font-bold text-white mb-1">Customer Segmentation</h1>
+            <p class="text-slate-400 text-sm mb-6">K-Means RFM+ clustering with 10 features and 4 customer segments.</p>
+
+            <!-- Segments -->
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+                <div class="glass rounded-xl p-5 border-t-2 border-indigo-500">
+                    <div class="text-indigo-400 font-bold mb-1">Champions</div>
+                    <div class="text-xs text-slate-400 mb-3">High-Value, Frequent, Recent</div>
+                    <div class="space-y-1 text-xs text-slate-500">
+                        <div>High monetary value</div>
+                        <div>High frequency</div>
+                        <div>Low recency days</div>
+                        <div>Low churn risk</div>
+                    </div>
+                    <div class="mt-3 text-xs text-indigo-400 font-mono">Strategy: Reward & retain</div>
+                </div>
+                <div class="glass rounded-xl p-5 border-t-2 border-green-500">
+                    <div class="text-green-400 font-bold mb-1">Loyal Mid-Tier</div>
+                    <div class="text-xs text-slate-400 mb-3">Steady, Moderate Spend</div>
+                    <div class="space-y-1 text-xs text-slate-500">
+                        <div>Moderate monetary value</div>
+                        <div>Regular frequency</div>
+                        <div>Avg recency</div>
+                        <div>Medium churn risk</div>
+                    </div>
+                    <div class="mt-3 text-xs text-green-400 font-mono">Strategy: Upsell & grow</div>
+                </div>
+                <div class="glass rounded-xl p-5 border-t-2 border-yellow-500">
+                    <div class="text-yellow-400 font-bold mb-1">At-Risk</div>
+                    <div class="text-xs text-slate-400 mb-3">Declining Engagement</div>
+                    <div class="space-y-1 text-xs text-slate-500">
+                        <div>Previously high value</div>
+                        <div>Dropping frequency</div>
+                        <div>High recency days</div>
+                        <div>High churn risk</div>
+                    </div>
+                    <div class="mt-3 text-xs text-yellow-400 font-mono">Strategy: Win-back campaigns</div>
+                </div>
+                <div class="glass rounded-xl p-5 border-t-2 border-red-500">
+                    <div class="text-red-400 font-bold mb-1">Dormant</div>
+                    <div class="text-xs text-slate-400 mb-3">Inactive / Low-Value</div>
+                    <div class="space-y-1 text-xs text-slate-500">
+                        <div>Low monetary value</div>
+                        <div>Very low frequency</div>
+                        <div>Max recency days</div>
+                        <div>Very high churn risk</div>
+                    </div>
+                    <div class="mt-3 text-xs text-red-400 font-mono">Strategy: Re-engage or drop</div>
+                </div>
+            </div>
+
+            <!-- Feature Table -->
+            <div class="glass rounded-xl p-5 mb-6">
+                <h2 class="text-base font-semibold text-white mb-4">Feature Engineering Details</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-slate-700">
+                                <th class="text-left py-2 px-3 text-xs text-slate-500 uppercase">Feature</th>
+                                <th class="text-left py-2 px-3 text-xs text-slate-500 uppercase">Type</th>
+                                <th class="text-left py-2 px-3 text-xs text-slate-500 uppercase">Range</th>
+                                <th class="text-left py-2 px-3 text-xs text-slate-500 uppercase">Business Meaning</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800 text-slate-300 text-xs">
+                            <tr>
+                                <td class="py-2 px-3 font-mono text-slate-400">avg_monthly_spend</td>
+                                <td class="py-2 px-3">Float</td>
+                                <td class="py-2 px-3">$500–5000</td>
+                                <td class="py-2 px-3">Overall spending power</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 font-mono text-slate-400">recency_days</td>
+                                <td class="py-2 px-3">Int</td>
+                                <td class="py-2 px-3">0–30 days</td>
+                                <td class="py-2 px-3">Days since last purchase</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 font-mono text-slate-400">frequency_per_month</td>
+                                <td class="py-2 px-3">Int</td>
+                                <td class="py-2 px-3">5–50</td>
+                                <td class="py-2 px-3">How often they shop</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 font-mono text-slate-400">total_monetary_value</td>
+                                <td class="py-2 px-3">Float</td>
+                                <td class="py-2 px-3">$1k–$150k</td>
+                                <td class="py-2 px-3">Lifetime customer value</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 font-mono text-indigo-400">avg_transaction_amount</td>
+                                <td class="py-2 px-3">Float</td>
+                                <td class="py-2 px-3">$10–$1000</td>
+                                <td class="py-2 px-3">Value per single visit</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 font-mono text-indigo-400">online_purchase_ratio</td>
+                                <td class="py-2 px-3">Float</td>
+                                <td class="py-2 px-3">0.0–1.0</td>
+                                <td class="py-2 px-3">Digital engagement level</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 font-mono text-indigo-400">night_owl_ratio</td>
+                                <td class="py-2 px-3">Float</td>
+                                <td class="py-2 px-3">0.0–1.0</td>
+                                <td class="py-2 px-3">Late-night shopping tendency</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 font-mono text-indigo-400">unique_merchants_count</td>
+                                <td class="py-2 px-3">Int</td>
+                                <td class="py-2 px-3">2–7</td>
+                                <td class="py-2 px-3">Brand loyalty vs exploration</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 font-mono text-indigo-400">churn_risk_score</td>
+                                <td class="py-2 px-3">Float</td>
+                                <td class="py-2 px-3">0.0–1.0</td>
+                                <td class="py-2 px-3">Composite risk of leaving</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 font-mono text-indigo-400">preferred_payment_method</td>
+                                <td class="py-2 px-3">Encoded Int</td>
+                                <td class="py-2 px-3">0/1/2</td>
+                                <td class="py-2 px-3">Chip / Tap / Online preference</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════ LOGS PAGE ═══════════ -->
+        <div id="page-logs" class="page">
+            <h1 class="text-2xl font-bold text-white mb-1">Activity Logs</h1>
+            <p class="text-slate-400 text-sm mb-6">Live system activity from all API calls.</p>
+            <div class="glass rounded-xl p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-sm text-slate-400">Console Output</span>
+                    <button onclick="document.getElementById('log-box').innerHTML=''"
+                        class="text-xs text-slate-500 hover:text-white transition">Clear</button>
+                </div>
+                <div id="log-box"
+                    class="bg-black/50 rounded-lg p-4 h-96 overflow-y-auto font-mono text-xs text-slate-300 space-y-1">
+                    <div class="text-slate-600">[System] Logger initialized. Waiting for activity...</div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const API = window.location.origin;
+        const navIds = ['overview', 'data', 'fraud', 'segment', 'logs'];
+
+        function showPage(name) {
+            navIds.forEach(id => {
+                document.getElementById('page-' + id).classList.toggle('active', id === name);
+                const btn = document.getElementById('nav-' + id);
+                btn.classList.toggle('active', id === name);
+                btn.classList.toggle('text-slate-400', id !== name);
+            });
+            if (name === 'overview') loadStats();
+        }
+
+        function addLog(msg, type = 'info') {
+            const box = document.getElementById('log-box');
+            const el = document.createElement('div');
+            const ts = new Date().toLocaleTimeString();
+            const colors = { info: 'text-slate-300', success: 'text-green-400', error: 'text-red-400', warn: 'text-yellow-400' };
+            el.className = colors[type] || 'text-slate-300';
+            el.innerHTML = `<span class="text-slate-600">[${ts}]</span> ${msg}`;
+            box.prepend(el);
+        }
+
+        async function loadStats() {
+            try {
+                const r = await fetch(`${API}/stats`);
+                if (!r.ok) return;
+                const d = await r.json();
+                document.getElementById('stat-users').textContent = (d.users || 0).toLocaleString();
+                document.getElementById('stat-txns').textContent = (d.transactions || 0).toLocaleString();
+                document.getElementById('stat-fraud').textContent = (d.fraud_count || 0).toLocaleString();
+            } catch (e) { /* DB not seeded yet */ }
+        }
+
+        async function generateData() {
+            const btn = document.getElementById('btn-gen');
+            const status = document.getElementById('gen-status');
+            btn.disabled = true;
+            btn.textContent = 'Generating... please wait (~30s)';
+            status.classList.remove('hidden');
+            status.innerHTML = '<span class="text-blue-400">Generating 55,000+ records...</span>';
+            addLog('Data generation started...', 'warn');
+            try {
+                const r = await fetch(`${API}/generate-data`, { method: 'POST' });
+                const d = await r.json();
+                if (r.ok) {
+                    status.innerHTML = `<span class="text-green-400">✓ Done! ${d.users_count} users, ${d.transactions_count} transactions generated.</span>`;
+                    addLog(`Generation complete: ${d.transactions_count} transactions`, 'success');
+                    loadStats();
+                } else { throw new Error(d.detail); }
+            } catch (e) {
+                status.innerHTML = `<span class="text-red-400">Error: ${e.message}</span>`;
+                addLog(`Generation failed: ${e.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Generate Synthetic Dataset';
+            }
+        }
+
+        async function simulateFraud(e) {
+            e.preventDefault();
+            const payload = {
+                user_id: parseInt(document.getElementById('f-uid').value),
+                amount: parseFloat(document.getElementById('f-amt').value),
+                merchant_category: document.getElementById('f-cat').value,
+                transaction_method: document.getElementById('f-method').value,
+                device_type: document.getElementById('f-device').value,
+            };
+            addLog(`Simulating txn for User ${payload.user_id} — $${payload.amount}`, 'info');
+            try {
+                const r = await fetch(`${API}/simulate-transaction`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                });
+                const d = await r.json();
+                const resultDiv = document.getElementById('fraud-result');
+                const verdict = document.getElementById('fraud-verdict');
+                const details = document.getElementById('fraud-details');
+                resultDiv.classList.remove('hidden');
+
+                if (d.is_fraud) {
+                    verdict.className = 'badge-fraud rounded-lg p-4 text-center';
+                    verdict.innerHTML = '<div class="text-2xl font-black text-red-400 mb-1">FRAUD DETECTED</div><div class="text-sm text-red-300">Transaction blocked</div>';
+                    addLog(`FRAUD on Tx ${d.transaction_id} — score ${d.fraud_score}`, 'error');
+                } else {
+                    verdict.className = 'badge-safe rounded-lg p-4 text-center';
+                    verdict.innerHTML = '<div class="text-2xl font-black text-green-400 mb-1">APPROVED</div><div class="text-sm text-green-300">Transaction safe</div>';
+                    addLog(`Approved Tx ${d.transaction_id}`, 'success');
+                }
+
+                const rows = [
+                    ['Transaction ID', d.transaction_id],
+                    ['Fraud Score', d.fraud_score],
+                    ['Amount Deviation', `${d.amount_deviation_from_avg}×`],
+                    ['Distance from Home', `${d.distance_from_home_km} km`],
+                    ['Hour of Day', d.hour_of_day + ':00'],
+                    ['International', d.is_international ? 'Yes' : 'No'],
+                ];
+                details.innerHTML = rows.map(([k, v]) =>
+                    `<div class="flex justify-between text-sm border-b border-slate-700/50 py-1.5">
+         <span class="text-slate-400">${k}</span>
+         <span class="text-white font-mono">${v}</span>
+       </div>`
+                ).join('');
+            } catch (err) {
+                addLog(`Simulation error: ${err.message}`, 'error');
+            }
+        }
+
+        // Load stats on init
+        loadStats();
+    </script>
+</body>
+
+</html>

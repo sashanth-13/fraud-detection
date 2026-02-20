@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Database (large binary — exclude from repo)
+fraud_detection_system/data/
+*.db
+*.sqlite3
+
+# Trained ML models (large binaries)
+fraud_detection_system/*.pkl
+
+# Generated plots (reproducible from training script)
+fraud_detection_system/*.png
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
